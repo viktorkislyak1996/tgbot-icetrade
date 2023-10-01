@@ -27,6 +27,7 @@ class IcetradeParser:
         'Host': 'icetrade.by',
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 '
                       '(KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
+        'Referer': 'icetrade.by',
         'Accept-Language': 'en-US,en;q=0.9,ru-RU;q=0.8,ru;q=0.7,la;q=0.6',
         'Accept-Encoding': 'gzip, deflate, br',
         'Connection': 'keep-alive',
