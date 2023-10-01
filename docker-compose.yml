@@ -1,0 +1,32 @@
+version: '3.7'
+
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: sh -c "make migrate && python -m bot.main"
+    env_file: .env
+    restart: always
+    depends_on:
+      - postgres
+    networks:
+      - tg_bot_spp
+
+  postgres:
+    image: postgres:14.3-alpine
+    container_name: postgres_tg_bot_spp
+    restart: on-failure
+    env_file: .env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - /opt/tg_bot_spp/db/pgdata:/var/lib/postgresql/data
+    networks:
+      - tg_bot_spp
+
+networks:
+  tg_bot_spp:
+    driver: bridge
