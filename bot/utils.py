@@ -1,3 +1,5 @@
+import re
+
 from aiogram import types
 from aiogram.types import CallbackQuery
 from sqlalchemy.orm import sessionmaker
@@ -15,3 +17,8 @@ async def receive_user_from_message(message: types.Message | CallbackQuery, sess
     if not user:
         user = await create_user(user_data, session)
     return user
+
+
+def receive_keyword_from_message(message: types.Message) -> str:
+    keyword = " ".join(re.findall("[а-яА-ЯёЁ]+", message.text))
+    return keyword

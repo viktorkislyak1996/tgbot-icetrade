@@ -1,14 +1,24 @@
 import asyncio
 import logging
+from collections import namedtuple
 
-from aiohttp import ClientSession
+from aiohttp import (
+    ClientSession,
+    ClientTimeout,
+    ServerDisconnectedError,
+    ClientConnectionError
+)
 from bs4 import BeautifulSoup
+from faker import Faker
 
+fake = Faker()
 logger = logging.getLogger(__name__)
+AuctionTable = namedtuple(
+    'AuctionTable',
+    ['description', 'customer_name', 'country', 'number', 'cost', 'expires_at', 'link']
+)
 
-
-class IcetradeParser:
-    keywords = (
+keywords = (
         'АСКУЭ',
         'АСУ ТП',
         'АСУТП',
@@ -21,99 +31,128 @@ class IcetradeParser:
         'распределительный пункт'
     )
 
+
+class IcetradeParser:
     headers = {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,'
                   'image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
         'Host': 'icetrade.by',
-        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 '
-                      '(KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
+        'User-Agent': fake.user_agent(),
         'Referer': 'icetrade.by',
         'Accept-Language': 'en-US,en;q=0.9,ru-RU;q=0.8,ru;q=0.7,la;q=0.6',
         'Accept-Encoding': 'gzip, deflate, br',
         'Connection': 'keep-alive',
         'Content-Type': 'text/html; charset=utf-8'
     }
-    url = ('https://icetrade.by/search/auctions?search_text=%D1%82%D0%B5%D0%BB%D0%B5%D0%BC%D0%B5%D1%85%D0%B0%D0%BD%D0%B8%D0%BA%D0%B0'
-           '&zakup_type%5B1%5D=1'
-           '&zakup_type%5B2%5D=1'
-           '&auc_num='
-           '&okrb='
-           '&company_title='
-           '&establishment=0'
-           '&industries='
-           '&period='
-           '&created_from='
-           '&created_to='
-           '&request_end_from='
-           '&request_end_to='
-           '&t%5BTrade%5D=1'
-           '&t%5BeTrade%5D=1'
-           '&t%5BsocialOrder%5D=1'
-           '&t%5BsingleSource%5D=1'
-           '&t%5BAuction%5D=1'
-           '&t%5BRequest%5D=1'
-           '&t%5BcontractingTrades%5D=1'
-           '&t%5Bnegotiations%5D=1'
-           '&t%5BOther%5D=1'
-           '&r%5B1%5D=1'
-           '&r%5B2%5D=2'
-           '&r%5B7%5D=7'
-           '&r%5B3%5D=3'
-           '&r%5B4%5D=4'
-           '&r%5B6%5D=6'
-           '&r%5B5%5D=5'
+    ICETRADE_AUCTION_URL = ('https://icetrade.by/search/auctions?search_text={}'
            '&sort=num%3Adesc'
-           '&sbm=1'
-           '&onPage=20'
+           '&onPage=50'
+           # '&zakup_type%5B1%5D=1'
+           # '&zakup_type%5B2%5D=1'
+           # '&auc_num='
+           # '&okrb='
+           # '&company_title='
+           # '&establishment=0'
+           # '&industries='
+           # '&period='
+           # '&created_from='
+           # '&created_to='
+           # '&request_end_from='
+           # '&request_end_to='
+           # '&t%5BTrade%5D=1'
+           # '&t%5BeTrade%5D=1'
+           # '&t%5BsocialOrder%5D=1'
+           # '&t%5BsingleSource%5D=1'
+           # '&t%5BAuction%5D=1'
+           # '&t%5BRequest%5D=1'
+           # '&t%5BcontractingTrades%5D=1'
+           # '&t%5Bnegotiations%5D=1'
+           # '&t%5BOther%5D=1'
+           # '&r%5B1%5D=1'
+           # '&r%5B2%5D=2'
+           # '&r%5B7%5D=7'
+           # '&r%5B3%5D=3'
+           # '&r%5B4%5D=4'
+           # '&r%5B6%5D=6'
+           # '&r%5B5%5D=5'
+           # '&sbm=1'
            )
 
-    async def __process_request(self) -> str:
-        async with ClientSession() as session:
-            async with session.get(self.url, headers=self.headers, ssl=False) as response:
-                response = await response.text()
-                # print(response)
-                return response
+    def __init__(self, keyword: str) -> None:
+        self.keyword = keyword
+        self.url = self.ICETRADE_AUCTION_URL.format(self.keyword)
+
+    async def __process_request(
+            self,
+            url: str,
+            headers: dict,
+            retries: int = 3,
+            semaphore: int = 50,
+            timeout: int = 1000
+            # timeout: int = 30
+    ) -> str:
+        timeout = ClientTimeout(total=timeout)
+        semaphore = asyncio.Semaphore(semaphore)
+        try:
+            async with semaphore:
+                async with ClientSession(timeout=timeout, raise_for_status=True) as session:
+                    async with session.get(url, headers=headers, ssl=False) as response:
+                        if response.status == 429:
+                            logger.error(f'Too many requests - url: {url}')
+                            await asyncio.sleep(5)
+                            if retries > 0:
+                                return await self.__process_request(url=url, headers=headers, retries=retries - 1)
+                        page_content = await response.text()
+                        return page_content
+        except (ServerDisconnectedError, ClientConnectionError, asyncio.exceptions.TimeoutError):
+            if retries > 0:
+                await asyncio.sleep(5)
+                return await self.__process_request(url=url, headers=headers, retries=retries - 1)
+            raise
+        except Exception as e:
+            logger.error(f"Error while fetching data: {e}")
+            raise
 
     async def __get_content(self) -> BeautifulSoup:
-        page_content = await self.__process_request()
+        page_content = await self.__process_request(self.url, self.headers)
         try:
-            self.soup = BeautifulSoup(page_content, "lxml")
+            soup = BeautifulSoup(page_content, "lxml")
         except TypeError:
             logger.error(
-                "Parser didn't find the total number of ads. "
+                "Parser didn't find the auction data."
                 "Please check the correctness of the parser"
             )
         else:
-            return self.soup
+            return soup
 
-    async def parse(self):
-        await self.__get_content()
-        if not self.soup:
-            return None
+    async def parse(self) -> list[AuctionTable] | None:
+        soup = await self.__get_content()
+        if not soup:
+            return
 
         total_result = []
         try:
-            table = self.soup.find(id='auctions-list')
+            table = soup.find(id='auctions-list')
             for row in table.find_all('tr'):
                 result = []
                 for cell in row.find_all('td'):
                     cell_text = cell.text
+                    if cell_text == 'Тендеры не найдены':
+                        break
                     result.append(cell_text.strip())
-                    # print(cell_text)
                 if result:
-                    total_result.append(result)
+                    total_result.append(AuctionTable(*result, link=self.url))
         except AttributeError:
             logger.error(
-                "Parses didn't find the total number of ads. "
+                "Parser didn't find the auction data."
                 "Please check the correctness of the parser"
             )
             return
-        print(total_result)
         return total_result
 
 
 if __name__ == '__main__':
     # loop = asyncio.new_event_loop()
     # loop.run_until_complete(parse_icetrade(url, headers))
-    parser = IcetradeParser()
+    parser = IcetradeParser('АСУТП')
     asyncio.run(parser.parse())

@@ -46,16 +46,16 @@ class Auction(BaseModel):
         return f'<Auction: {self.keyword}>'
 
 
-# async def get_product(product_wb_id: int, user_id: int, session: sessionmaker) -> Product:
-#     async with session() as session:
-#         async with session.begin():
-#             result = await session.execute(
-#                 select(Product).filter(Product.wb_id == product_wb_id, Product.user_id == user_id)
-#             )
-#             product = result.scalar()
-#             return product
-#
-#
+async def get_auction(keyword: str, user_id: int, session: sessionmaker) -> Auction:
+    async with session() as session:
+        async with session.begin():
+            result = await session.execute(
+                select(Auction).filter(Auction.keyword == keyword, Auction.user_id == user_id)
+            )
+            auction = result.scalar()
+            return auction
+
+
 # async def get_all_tracking_products(session: sessionmaker) -> list[Product]:
 #     async with session() as session:
 #         async with session.begin():
