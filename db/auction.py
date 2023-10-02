@@ -23,7 +23,6 @@ class Auction(BaseModel):
     __tablename__ = 'auction'
 
     id = Column(Integer, primary_key=True)
-    keyword = Column(String(128))
     description = Column(Text, nullable=True)
     customer_name = Column(String(256), nullable=True)
     country = Column(String(64), nullable=True)
@@ -33,6 +32,9 @@ class Auction(BaseModel):
     expires_at = Column(Date, nullable=True)
     created_at = Column(DateTime(timezone=True), default=datetime.now())
     updated_at = Column(DateTime(timezone=True), onupdate=datetime.now())
+    keyword = Column(String(128))
+    tracking = Column(Boolean, nullable=False, default=False)
+    link = Column(Text, nullable=True)
     user_id = Column(Integer, ForeignKey('users.id'))
     user = relationship('User', back_populates="auctions")
 
@@ -62,14 +64,14 @@ class Auction(BaseModel):
 #             return products
 #
 #
-# async def get_all_tracking_products_by_user_id(user_id: int, session: sessionmaker) -> list[Product]:
-#     async with session() as session:
-#         async with session.begin():
-#             result = await session.execute(
-#                 select(Product).filter(Product.tracking == True, Product.user_id == user_id)
-#             )
-#             products = result.scalars().all()
-#             return products
+async def get_all_tracking_auctions_by_user_id(user_id: int, session: sessionmaker) -> list[Auction]:
+    async with session() as session:
+        async with session.begin():
+            result = await session.execute(
+                select(Auction).filter(Auction.tracking == True, Auction.user_id == user_id)
+            )
+            auctions = result.scalars().all()
+            return auctions
 #
 #
 # async def get_all_products(user_id: int, session: sessionmaker) -> list[Product]:
