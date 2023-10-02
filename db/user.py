@@ -14,7 +14,7 @@ class User(BaseModel):
     telegram_id = Column(Integer, unique=True, nullable=False)
     created_at = Column(DateTime(timezone=True), default=datetime.now())
     updated_at = Column(DateTime(timezone=True), onupdate=datetime.now())
-    products = relationship("Auction", back_populates="user")
+    auctions = relationship("Auction", back_populates="user")
 
     def __repr__(self):
         return f'<User: {self.name} {self.telegram_id}>'

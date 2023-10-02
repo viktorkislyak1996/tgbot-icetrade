@@ -3,7 +3,7 @@ from aiogram.utils.markdown import link
 from db import Auction
 
 
-def receive_product_message(auction: Auction) -> str:
+def receive_auction_message(auction: Auction) -> str:
     auction_link = link(f'Ссылка на аукцион', f'{auction.link}')
     response_message = (
         f'🔎*Icetrade_bot*\n\n'

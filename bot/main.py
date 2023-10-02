@@ -8,9 +8,9 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from dotenv import load_dotenv
 from sqlalchemy import URL
 
-# from bot.routes import register_user_commands
+from bot.routes import register_user_commands
 # from bot.scheduler import spp_price_tracker
-# from bot.commands.bot_commands import bot_commands
+from bot.commands.bot_commands import bot_commands
 
 from db import create_async_engine, get_session_maker
 
@@ -22,8 +22,8 @@ async def main() -> None:
     logging.basicConfig(level=logging.DEBUG)
 
     commands_for_bot = []
-    # for cmd in bot_commands:
-    #     commands_for_bot.append(BotCommand(command=cmd[0], description=cmd[1]))
+    for cmd in bot_commands:
+        commands_for_bot.append(BotCommand(command=cmd[0], description=cmd[1]))
 
     dp = Dispatcher()
     bot = Bot(token=os.getenv("TELEGRAM_TOKEN"))
@@ -31,7 +31,7 @@ async def main() -> None:
     await bot.set_my_commands(commands=commands_for_bot)
 
     # register commands and handlers
-    # register_user_commands(dp)
+    register_user_commands(dp)
 
     postgres_url = URL.create(
         'postgresql+asyncpg',
