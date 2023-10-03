@@ -35,6 +35,7 @@ class Auction(BaseModel):
     keyword = Column(String(128))
     tracking = Column(Boolean, nullable=False, default=False)
     link = Column(Text, nullable=True)
+    offers_number = Column(Integer, nullable=True)
     user_id = Column(Integer, ForeignKey('users.id'))
     user = relationship('User', back_populates="auctions")
 
@@ -56,14 +57,14 @@ async def get_auction(keyword: str, user_id: int, session: sessionmaker) -> Auct
             return auction
 
 
-# async def get_all_tracking_products(session: sessionmaker) -> list[Product]:
-#     async with session() as session:
-#         async with session.begin():
-#             result = await session.execute(select(Product).where(Product.tracking == True))
-#             products = result.scalars().all()
-#             return products
-#
-#
+async def get_all_tracking_auctions(session: sessionmaker) -> list[Auction]:
+    async with session() as session:
+        async with session.begin():
+            result = await session.execute(select(Auction).where(Auction.tracking == True))
+            auctions = result.scalars().all()
+            return auctions
+
+
 async def get_all_tracking_auctions_by_user_id(user_id: int, session: sessionmaker) -> list[Auction]:
     async with session() as session:
         async with session.begin():
@@ -72,50 +73,50 @@ async def get_all_tracking_auctions_by_user_id(user_id: int, session: sessionmak
             )
             auctions = result.scalars().all()
             return auctions
-#
-#
-# async def get_all_products(user_id: int, session: sessionmaker) -> list[Product]:
-#     async with session() as session:
-#         async with session.begin():
-#             result = await session.execute(select(Product).filter(Product.user_id == user_id))
-#             products = result.scalars().all()
-#             return products
-#
-#
-# async def get_products_count(user_id: int, session: sessionmaker) -> int:
-#     async with session() as session:
-#         async with session.begin():
-#             result = await session.execute(
-#                 select(func.count())
-#                 .select_from(Product)
-#                 .filter(Product.user_id == user_id, Product.tracking == True)
-#             )
-#             total_count = result.scalar()
-#             return total_count
-#
-#
-# async def create_product(product_data: dict, session: sessionmaker) -> Product:
-#     async with session() as session:
-#         async with session.begin():
-#             product = Product(**product_data)
-#             session.add(product)
-#         await session.commit()
-#         return product
-#
-#
-# async def update_product(product: Product, update_data: dict, session: sessionmaker) -> Product:
-#     async with session() as session:
-#         async with session.begin():
-#             merged_product = await session.merge(product)
-#             for key, value in update_data.items():
-#                 setattr(merged_product, key, value)
-#         await session.commit()
-#         return merged_product
-#
-#
-# async def delete_product(product: Product, session: sessionmaker) -> None:
-#     async with session() as session:
-#         async with session.begin():
-#             merged_product = await session.merge(product)
-#             await session.delete(merged_product)
-#         await session.commit()
+
+
+async def get_all_auctions(user_id: int, session: sessionmaker) -> list[Auction]:
+    async with session() as session:
+        async with session.begin():
+            result = await session.execute(select(Auction).filter(Auction.user_id == user_id))
+            auctions = result.scalars().all()
+            return auctions
+
+
+async def get_keywords_count(user_id: int, session: sessionmaker) -> int:
+    async with session() as session:
+        async with session.begin():
+            result = await session.execute(
+                select(func.count())
+                .select_from(Auction)
+                .filter(Auction.user_id == user_id, Auction.tracking == True)
+            )
+            total_count = result.scalar()
+            return total_count
+
+
+async def create_auction(auction_data: dict, session: sessionmaker) -> Auction:
+    async with session() as session:
+        async with session.begin():
+            auction = Auction(**auction_data)
+            session.add(auction)
+        await session.commit()
+        return auction
+
+
+async def update_auction(auction: Auction, update_data: dict, session: sessionmaker) -> Auction:
+    async with session() as session:
+        async with session.begin():
+            merged_auction = await session.merge(auction)
+            for key, value in update_data.items():
+                setattr(merged_auction, key, value)
+        await session.commit()
+        return merged_auction
+
+
+async def delete_auction(auction: Auction, session: sessionmaker) -> None:
+    async with session() as session:
+        async with session.begin():
+            merged_auction = await session.merge(auction)
+            await session.delete(merged_auction)
+        await session.commit()

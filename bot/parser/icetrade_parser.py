@@ -44,39 +44,11 @@ class IcetradeParser:
         'Connection': 'keep-alive',
         'Content-Type': 'text/html; charset=utf-8'
     }
-    ICETRADE_AUCTION_URL = ('https://icetrade.by/search/auctions?search_text={}'
-           '&sort=num%3Adesc'
-           '&onPage=50'
-           # '&zakup_type%5B1%5D=1'
-           # '&zakup_type%5B2%5D=1'
-           # '&auc_num='
-           # '&okrb='
-           # '&company_title='
-           # '&establishment=0'
-           # '&industries='
-           # '&period='
-           # '&created_from='
-           # '&created_to='
-           # '&request_end_from='
-           # '&request_end_to='
-           # '&t%5BTrade%5D=1'
-           # '&t%5BeTrade%5D=1'
-           # '&t%5BsocialOrder%5D=1'
-           # '&t%5BsingleSource%5D=1'
-           # '&t%5BAuction%5D=1'
-           # '&t%5BRequest%5D=1'
-           # '&t%5BcontractingTrades%5D=1'
-           # '&t%5Bnegotiations%5D=1'
-           # '&t%5BOther%5D=1'
-           # '&r%5B1%5D=1'
-           # '&r%5B2%5D=2'
-           # '&r%5B7%5D=7'
-           # '&r%5B3%5D=3'
-           # '&r%5B4%5D=4'
-           # '&r%5B6%5D=6'
-           # '&r%5B5%5D=5'
-           # '&sbm=1'
-           )
+    ICETRADE_AUCTION_URL = (
+        'https://icetrade.by/search/auctions?search_text={}'
+        '&sort=num%3Adesc'
+        '&onPage=50'
+    )
 
     def __init__(self, keyword: str) -> None:
         self.keyword = keyword
@@ -89,6 +61,7 @@ class IcetradeParser:
             retries: int = 3,
             semaphore: int = 50,
             timeout: int = 1000
+            # TODO set to 30 after testing
             # timeout: int = 30
     ) -> str:
         timeout = ClientTimeout(total=timeout)
@@ -125,7 +98,7 @@ class IcetradeParser:
         else:
             return soup
 
-    async def parse(self) -> list[AuctionTable] | None:
+    async def parse_auction(self) -> list[AuctionTable] | None:
         soup = await self.__get_content()
         if not soup:
             return
@@ -148,11 +121,26 @@ class IcetradeParser:
                 "Please check the correctness of the parser"
             )
             return
-        return total_result
+        return total_result[:5]
+
+    async def get_auction_info(self) -> dict:
+        auction_list = await self.parse_auction()
+        result = {'auction_link': self.url}
+        if auction_list:
+            offers_number = len(auction_list)
+            last_auction = max(auction_list, key=lambda x: int(x.number.split('-')[1]))
+            result.update(
+                {
+                    'offers_number': offers_number,
+                    'last_auction': last_auction
+                }
+            )
+        return result
 
 
 if __name__ == '__main__':
     # loop = asyncio.new_event_loop()
     # loop.run_until_complete(parse_icetrade(url, headers))
-    parser = IcetradeParser('АСУТП')
-    asyncio.run(parser.parse())
+    parser = IcetradeParser('телемеханика')
+    # asyncio.run(parser.parse_auction())
+    asyncio.run(parser.get_auction_info())
