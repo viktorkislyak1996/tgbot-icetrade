@@ -4,6 +4,7 @@ from aiogram import types
 from aiogram.types import CallbackQuery
 from sqlalchemy.orm import sessionmaker
 
+from bot.parser import AuctionTable
 from db import get_user_by_telegram_id, create_user, User
 
 digit_to_emoji = {
@@ -35,3 +36,27 @@ def receive_keyword_from_message(message: types.Message) -> str:
 def receive_keyword_from_callback(callback: CallbackQuery) -> str:
     keyword = callback.data.split('_')[-1]
     return keyword
+
+
+def is_first_number_greater(num1: str, num2: str) -> bool:
+    num1_split = num1.split('-')
+    num2_split = num2.split('-')
+    num1_year, num1_number = int(num1_split[0]), int(num1_split[1])
+    num2_year, num2_number = int(num2_split[0]), int(num2_split[1])
+    if num1_year > num2_year:
+        return True
+    elif num1_year == num2_year:
+        if num1_number > num2_number:
+            return True
+        else:
+            return False
+    else:
+        return False
+
+
+def get_auctions_diff(auction_list: list[AuctionTable], old_number: str) -> list[AuctionTable]:
+    result = []
+    for auction in auction_list:
+        if is_first_number_greater(auction.number, old_number):
+            result.append(auction)
+    return result

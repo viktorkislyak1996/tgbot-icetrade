@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from sqlalchemy import URL
 
 from bot.routes import register_user_commands
-# from bot.scheduler import spp_price_tracker
+from bot.scheduler import auction_tracker
 from bot.commands.bot_commands import bot_commands
 
 from db import create_async_engine, get_session_maker
@@ -44,9 +44,9 @@ async def main() -> None:
     async_engine = create_async_engine(postgres_url)
     session_maker = get_session_maker(async_engine)
 
-    # scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
-    # scheduler.add_job(spp_price_tracker, trigger='interval', minutes=5, kwargs={'bot': bot, 'session': session_maker})
-    # scheduler.start()
+    scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
+    scheduler.add_job(auction_tracker, trigger='interval', minutes=60, kwargs={'bot': bot, 'session': session_maker})
+    scheduler.start()
 
     # drop pending message
     await bot.delete_webhook(drop_pending_updates=True)

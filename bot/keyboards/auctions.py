@@ -8,15 +8,15 @@ def get_inline_tracking_keyboard(auction: Auction, keyword: str) -> InlineKeyboa
     if auction:
         if auction.tracking:
             buttons.append(
-                [InlineKeyboardButton(text="Прекратить отслеживание аукциона", callback_data=f'stop_tracking_{keyword}')]
+                [InlineKeyboardButton(text="Прекратить отслеживание", callback_data=f'stop_tracking_{keyword}')]
             )
         else:
             buttons.append(
-                [InlineKeyboardButton(text="Запустить отслеживание аукциона", callback_data=f'run_tracking_{keyword}')]
+                [InlineKeyboardButton(text="Запустить отслеживание", callback_data=f'run_tracking_{keyword}')]
             )
     else:
         buttons.append(
-            [InlineKeyboardButton(text="Запустить отслеживание аукциона", callback_data=f'run_tracking_{keyword}')])
+            [InlineKeyboardButton(text="Запустить отслеживание", callback_data=f'run_tracking_{keyword}')])
 
     buttons.append([InlineKeyboardButton(text="Обновить", callback_data=f'refresh_{keyword}')])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
@@ -26,7 +26,7 @@ def get_inline_tracking_keyboard(auction: Auction, keyword: str) -> InlineKeyboa
 def get_inline_run_tracking_keyboard(keyword: str) -> InlineKeyboardMarkup:
     buttons = [
         [
-            InlineKeyboardButton(text="Прекратить отслеживание аукциона", callback_data=f'stop_tracking_{keyword}')
+            InlineKeyboardButton(text="Прекратить отслеживание", callback_data=f'stop_tracking_{keyword}')
         ],
         [
             InlineKeyboardButton(text="Обновить", callback_data=f'refresh_{keyword}')
@@ -39,7 +39,7 @@ def get_inline_run_tracking_keyboard(keyword: str) -> InlineKeyboardMarkup:
 def get_inline_stop_tracking_keyboard(keyword: str) -> InlineKeyboardMarkup:
     buttons = [
         [
-            InlineKeyboardButton(text="Запустить отслеживание аукциона", callback_data=f'run_tracking_{keyword}'),
+            InlineKeyboardButton(text="Запустить отслеживание", callback_data=f'run_tracking_{keyword}'),
         ],
         [
             InlineKeyboardButton(text="Обновить", callback_data=f'refresh_{keyword}')

@@ -32,7 +32,6 @@ async def run_tracking_callback(callback: CallbackQuery, session: sessionmaker) 
 
     parser = IcetradeParser(keyword)
     auction_info = await parser.get_auction_info()
-    # if auction_info:
     auction = await get_auction(keyword, user.id, session)
     if not auction:
         keywords_count = await get_keywords_count(user.id, session)
@@ -72,7 +71,7 @@ async def run_tracking_callback(callback: CallbackQuery, session: sessionmaker) 
         await update_auction(auction, update_auction_data, session)
 
     await callback.message.answer(
-        f'Отслеживание аукциона по ключевому слову *{keyword}* включено!',
+        f'Отслеживание тендеров по ключевому слову *{keyword}* включено!',
         reply_markup=keyboard,
         parse_mode=ParseMode.MARKDOWN,
         disable_web_page_preview=True
@@ -90,14 +89,14 @@ async def stop_tracking_callback(callback: CallbackQuery, session: sessionmaker)
         await delete_auction(auction, session)
 
         await callback.message.answer(
-            f'Отслеживание аукциона по ключевому слову *{keyword}* выключено!',
+            f'Отслеживание тендеров по ключевому слову *{keyword}* выключено!',
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN,
             disable_web_page_preview=True
         )
     else:
         await callback.message.answer(
-            f'Аукцион по ключевому слову *{keyword}* не найден!\n'
+            f'Тендеры по ключевому слову *{keyword}* не найден!\n'
             f'Пожалуйста, повторите запрос или обратитесь к администратору',
             parse_mode=ParseMode.MARKDOWN,
             disable_web_page_preview=True
@@ -115,7 +114,7 @@ async def refresh_callback(callback: CallbackQuery, session: sessionmaker) -> No
     parser = IcetradeParser(keyword)
     auction_list = await parser.parse_auction()
     if auction_list:
-        response_message = receive_parsed_auction_message(auction_list)
+        response_message = receive_parsed_auction_message(auction_list, keyword)
         await callback.message.answer(
             response_message,
             reply_markup=keyboard,

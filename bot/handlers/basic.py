@@ -11,11 +11,20 @@ from bot.messages import receive_parsed_auction_message, receive_not_found_aucti
 
 async def auction(message: types.Message, session: sessionmaker) -> None:
     keyword = receive_keyword_from_message(message)
+    if len(keyword) > 25:
+        await message.answer(
+            'Длина ключевого слова не должна превышать *25* символов!\n'
+            'Пожалуйста, умерьте свой аппетит\n',
+            parse_mode=ParseMode.MARKDOWN,
+        )
+        return
+
     if not keyword:
         await message.answer(
             'Неверный формат\n'
             'В запросе должно быть ключевое слово.\n'
-            'Пример: АСУТП'
+            'Пример: *АСУТП*',
+            parse_mode=ParseMode.MARKDOWN,
         )
         return
 
@@ -26,9 +35,9 @@ async def auction(message: types.Message, session: sessionmaker) -> None:
     parser = IcetradeParser(keyword)
     auction_list = await parser.parse_auction()
     if auction_list:
-        response_message = receive_parsed_auction_message(auction_list)
+        response_message = receive_parsed_auction_message(auction_list, keyword)
     else:
-        response_message = receive_not_found_auction_message(parser.url)
+        response_message = receive_not_found_auction_message(parser.url, keyword)
 
     await message.answer(
         response_message,

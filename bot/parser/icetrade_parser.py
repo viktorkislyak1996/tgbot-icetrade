@@ -11,25 +11,14 @@ from aiohttp import (
 from bs4 import BeautifulSoup
 from faker import Faker
 
-fake = Faker()
 logger = logging.getLogger(__name__)
+
+fake = Faker()
+
 AuctionTable = namedtuple(
     'AuctionTable',
     ['description', 'customer_name', 'country', 'number', 'cost', 'expires_at', 'link']
 )
-
-keywords = (
-        'АСКУЭ',
-        'АСУ ТП',
-        'АСУТП',
-        'телемеханика',
-        'ТЛМ',
-        'трансформаторная подстанция',
-        'подстанция',
-        'ТП',
-        'РП',
-        'распределительный пункт'
-    )
 
 
 class IcetradeParser:
@@ -60,9 +49,7 @@ class IcetradeParser:
             headers: dict,
             retries: int = 3,
             semaphore: int = 50,
-            timeout: int = 1000
-            # TODO set to 30 after testing
-            # timeout: int = 30
+            timeout: int = 30
     ) -> str:
         timeout = ClientTimeout(total=timeout)
         semaphore = asyncio.Semaphore(semaphore)
@@ -123,8 +110,9 @@ class IcetradeParser:
             return
         return total_result[:5]
 
-    async def get_auction_info(self) -> dict:
-        auction_list = await self.parse_auction()
+    async def get_auction_info(self, auction_list: list[AuctionTable] = None) -> dict:
+        if not auction_list:
+            auction_list = await self.parse_auction()
         result = {'auction_link': self.url}
         if auction_list:
             offers_number = len(auction_list)
@@ -136,11 +124,3 @@ class IcetradeParser:
                 }
             )
         return result
-
-
-if __name__ == '__main__':
-    # loop = asyncio.new_event_loop()
-    # loop.run_until_complete(parse_icetrade(url, headers))
-    parser = IcetradeParser('телемеханика')
-    # asyncio.run(parser.parse_auction())
-    asyncio.run(parser.get_auction_info())
