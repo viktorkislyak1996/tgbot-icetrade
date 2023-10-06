@@ -35,7 +35,7 @@ async def run_tracking_callback(callback: CallbackQuery, session: sessionmaker) 
     auction = await get_auction(keyword, user.id, session)
     if not auction:
         keywords_count = await get_keywords_count(user.id, session)
-        keywords_count_limit = int(os.getenv('KEYWORDS_COUNT_LIMIT', 10))
+        keywords_count_limit = int(os.getenv('KEYWORDS_COUNT_LIMIT', 20))
         if keywords_count > keywords_count_limit:
             await callback.message.answer(
                 f'Лимит отслеживаемых ключевых слов (*{keywords_count_limit}*) превышен!\n'

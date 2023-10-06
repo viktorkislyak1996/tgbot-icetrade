@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from collections import namedtuple
+from urllib.parse import quote
 
 from aiohttp import (
     ClientSession,
@@ -17,7 +18,7 @@ fake = Faker()
 
 AuctionTable = namedtuple(
     'AuctionTable',
-    ['description', 'customer_name', 'country', 'number', 'cost', 'expires_at', 'link']
+    ['link', 'description', 'customer_name', 'country', 'number', 'cost', 'expires_at']
 )
 
 
@@ -41,7 +42,7 @@ class IcetradeParser:
 
     def __init__(self, keyword: str) -> None:
         self.keyword = keyword
-        self.url = self.ICETRADE_AUCTION_URL.format(self.keyword)
+        self.url = self.ICETRADE_AUCTION_URL.format(quote(self.keyword))
 
     async def __process_request(
             self,
@@ -95,13 +96,20 @@ class IcetradeParser:
             table = soup.find(id='auctions-list')
             for row in table.find_all('tr'):
                 result = []
-                for cell in row.find_all('td'):
+                for index, cell in enumerate(row.find_all('td')):
                     cell_text = cell.text
                     if cell_text == 'Тендеры не найдены':
                         break
+                    if index == 0:
+                        a_tag = cell.find('a')
+                        if a_tag:
+                            link = a_tag.get('href', self.url)
+                        else:
+                            link = self.url
+                        result.append(link)
                     result.append(cell_text.strip())
                 if result:
-                    total_result.append(AuctionTable(*result, link=self.url))
+                    total_result.append(AuctionTable(*result))
         except AttributeError:
             logger.error(
                 "Parser didn't find the auction data."

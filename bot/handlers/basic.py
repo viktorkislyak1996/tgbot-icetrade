@@ -37,7 +37,7 @@ async def auction(message: types.Message, session: sessionmaker) -> None:
     if auction_list:
         response_message = receive_parsed_auction_message(auction_list, keyword)
     else:
-        response_message = receive_not_found_auction_message(parser.url, keyword)
+        response_message = receive_not_found_auction_message(keyword)
 
     await message.answer(
         response_message,

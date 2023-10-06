@@ -24,7 +24,7 @@ def receive_parsed_message(auction_list: list[AuctionTable], title: str) -> str:
 
 
 def receive_db_auction_message(auction: Auction) -> str:
-    auction_link = link(f'Ссылка на тендер', f'{auction.link}')
+    auction_link = link(f'Ссылка на тендеры', f'{auction.link}')
     last_updated = auction.updated_at if auction.updated_at else auction.created_at
     response_message = (
         f'📌 Ключевое слово: *{auction.keyword}*\n\n'
@@ -50,12 +50,10 @@ def receive_parsed_auction_message(auction_list: list[AuctionTable], keyword: st
     return message
 
 
-def receive_not_found_auction_message(auction_link: str, keyword: str) -> str:
-    auction_link = link(f'Ссылка на тендер', f'{auction_link}')
+def receive_not_found_auction_message(keyword: str) -> str:
     response_message = (
         f'🔎 *{keyword}*\n\n'
-        f'❌ *Тендеры не найдены*\n\n'
-        f'➡️ {auction_link}\n'
+        f'❌ *Тендеры не найдены*\n'
     )
     return response_message
 
