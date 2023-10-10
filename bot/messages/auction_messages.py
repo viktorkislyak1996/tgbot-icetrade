@@ -1,6 +1,6 @@
 from aiogram.utils.markdown import link
 
-from bot.parser import AuctionTable
+from bot.scraper import AuctionTable
 from bot.utils import digit_to_emoji
 from db import Auction
 

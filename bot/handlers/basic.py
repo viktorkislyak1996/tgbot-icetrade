@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 
 from db import get_auction
 from bot.keyboards import get_inline_tracking_keyboard
-from bot.parser import IcetradeParser
+from bot.scraper import IcetradeScraper
 from bot.utils import receive_keyword_from_message, receive_user_from_message
 from bot.messages import receive_parsed_auction_message, receive_not_found_auction_message
 
@@ -32,8 +32,8 @@ async def auction(message: types.Message, session: sessionmaker) -> None:
     auction = await get_auction(keyword, user.id, session)
     keyboard = get_inline_tracking_keyboard(auction, keyword)
 
-    parser = IcetradeParser(keyword)
-    auction_list = await parser.parse_auction()
+    parser = IcetradeScraper(keyword)
+    auction_list = await parser.get_auction()
     if auction_list:
         response_message = receive_parsed_auction_message(auction_list, keyword)
     else:

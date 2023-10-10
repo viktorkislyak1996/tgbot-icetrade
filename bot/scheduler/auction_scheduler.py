@@ -5,19 +5,27 @@ from sqlalchemy.orm import sessionmaker
 from bot.utils import get_auctions_diff
 from db import get_all_tracking_auctions, update_auction, get_user_by_id
 from bot.keyboards import get_inline_run_tracking_keyboard
-from bot.parser import IcetradeParser
+from bot.scraper import IcetradeScraper
 from bot.messages import receive_parsed_scheduler_message
 
 
-async def auction_tracker(bot: Bot, session: sessionmaker):
+async def auction_tracker(bot: Bot, session: sessionmaker) -> None:
+    """
+    The periodic task that tracks Icetrade auction changes
+    and sends a telegram message with info about new tenders
+
+    Args:
+        bot: The telegram bot
+        session: The SQLAlchemy async session
+    """
     tracking_auctions = await get_all_tracking_auctions(session)
     user_id = None
     user_telegram_id = None
     for auction in tracking_auctions:
         keyboard = get_inline_run_tracking_keyboard(auction.keyword)
 
-        parser = IcetradeParser(auction.keyword)
-        auction_list = await parser.parse_auction()
+        parser = IcetradeScraper(auction.keyword)
+        auction_list = await parser.get_auction()
         if not auction_list:
             continue
 
@@ -32,7 +40,7 @@ async def auction_tracker(bot: Bot, session: sessionmaker):
         auction_info = await parser.get_auction_info(auction_list)
         update_auction_data = {
             'offers_number': auction_info['offers_number'],
-            'number': auction_info['last_auction'].number
+            'number': auction_info['last_tender'].number
         }
         await update_auction(auction, update_auction_data, session)
 

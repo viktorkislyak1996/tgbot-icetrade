@@ -17,9 +17,9 @@ from bot.keyboards import (
     get_inline_stop_tracking_keyboard,
     get_inline_run_tracking_keyboard
 )
-from bot.parser import IcetradeParser
+from bot.scraper import IcetradeScraper
 from bot.utils import receive_keyword_from_callback, receive_user_from_message
-from bot.messages import receive_parsed_auction_message
+from bot.messages import receive_parsed_auction_message, receive_not_found_auction_message
 
 load_dotenv()
 
@@ -30,7 +30,7 @@ async def run_tracking_callback(callback: CallbackQuery, session: sessionmaker) 
 
     keyboard = get_inline_run_tracking_keyboard(keyword)
 
-    parser = IcetradeParser(keyword)
+    parser = IcetradeScraper(keyword)
     auction_info = await parser.get_auction_info()
     auction = await get_auction(keyword, user.id, session)
     if not auction:
@@ -51,17 +51,17 @@ async def run_tracking_callback(callback: CallbackQuery, session: sessionmaker) 
             'tracking': True,
             'link': auction_info.get('auction_link')
         }
-        if last_auction := auction_info.get('last_auction'):
+        if last_tender := auction_info.get('last_tender'):
             auction_data.update(
                 {
                     'offers_number': auction_info['offers_number'],
-                    'number': last_auction.number
+                    'number': last_tender.number
                 }
             )
         await create_auction(auction_data, session)
     else:
         update_auction_data = {'tracking': True}
-        if not auction_info.get('last_auction'):
+        if not auction_info.get('last_tender'):
             update_auction_data.update(
                 {
                     'offers_number': None,
@@ -111,18 +111,17 @@ async def refresh_callback(callback: CallbackQuery, session: sessionmaker) -> No
 
     keyboard = get_inline_tracking_keyboard(auction, keyword)
 
-    parser = IcetradeParser(keyword)
-    auction_list = await parser.parse_auction()
+    parser = IcetradeScraper(keyword)
+    auction_list = await parser.get_auction()
     if auction_list:
         response_message = receive_parsed_auction_message(auction_list, keyword)
-        await callback.message.answer(
-            response_message,
-            reply_markup=keyboard,
-            parse_mode=ParseMode.MARKDOWN,
-            disable_web_page_preview=True
-        )
     else:
-        await callback.message.answer(
-            'Что-то пошло не так! \n '
-            'Пожалуйста, подождите несколько минут и повторите попытку.'
-        )
+        response_message = receive_not_found_auction_message(keyword)
+
+    await callback.message.answer(
+        response_message,
+        reply_markup=keyboard,
+        parse_mode=ParseMode.MARKDOWN,
+        disable_web_page_preview=True
+    )
+

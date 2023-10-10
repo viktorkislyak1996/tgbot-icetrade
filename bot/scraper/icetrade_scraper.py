@@ -22,7 +22,19 @@ AuctionTable = namedtuple(
 )
 
 
-class IcetradeParser:
+class IcetradeScraper:
+    """
+    The class that allows to scrape Icetrade auctions
+    based on a specific search keyword
+
+    Args:
+        keyword: The keyword to scrape.
+
+    Attributes:
+        headers: The headers for request.
+        url: The URL to be parsed.
+    """
+
     headers = {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,'
                   'image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
@@ -52,6 +64,19 @@ class IcetradeParser:
             semaphore: int = 50,
             timeout: int = 30
     ) -> str:
+        """
+        Makes a request by URL and returns the content.
+
+        Args:
+            url: The URL to make request.
+            headers: The headers for request.
+            retries: The number of attempts to make a request
+            semaphore: The semaphore
+            timeout: Time to interrupt the request (in seconds)
+
+        Returns:
+            The page content.
+        """
         timeout = ClientTimeout(total=timeout)
         semaphore = asyncio.Semaphore(semaphore)
         try:
@@ -75,6 +100,12 @@ class IcetradeParser:
             raise
 
     async def __get_content(self) -> BeautifulSoup:
+        """
+        Obtain the BeautifulSoup content.
+
+        Returns:
+            The BeautifulSoup content.
+        """
         page_content = await self.__process_request(self.url, self.headers)
         try:
             soup = BeautifulSoup(page_content, "lxml")
@@ -86,7 +117,14 @@ class IcetradeParser:
         else:
             return soup
 
-    async def parse_auction(self) -> list[AuctionTable] | None:
+    async def get_auction(self) -> list[AuctionTable] | None:
+        """
+        Receive top 5 tenders from the Icetrade auction.
+
+        Returns:
+            The list of namedtuples that contain link, description,
+            customer_name, country, number, cost and expires_at info.
+        """
         soup = await self.__get_content()
         if not soup:
             return
@@ -119,16 +157,27 @@ class IcetradeParser:
         return total_result[:5]
 
     async def get_auction_info(self, auction_list: list[AuctionTable] = None) -> dict:
+        """
+        Receive Icetrade auction info.
+
+        Args:
+            auction_list: The list of namedtuples that contain link, description,
+                          customer_name, country, number, cost and expires_at info.
+
+        Returns:
+            The dict that contains the number of offers,
+            info about the last tender and auction link (if the auction was found)
+        """
         if not auction_list:
-            auction_list = await self.parse_auction()
+            auction_list = await self.get_auction()
         result = {'auction_link': self.url}
         if auction_list:
             offers_number = len(auction_list)
-            last_auction = max(auction_list, key=lambda x: int(x.number.split('-')[1]))
+            last_tender = max(auction_list, key=lambda x: int(x.number.split('-')[1]))
             result.update(
                 {
                     'offers_number': offers_number,
-                    'last_auction': last_auction
+                    'last_tender': last_tender
                 }
             )
         return result

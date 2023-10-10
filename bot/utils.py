@@ -4,7 +4,7 @@ from aiogram import types
 from aiogram.types import CallbackQuery
 from sqlalchemy.orm import sessionmaker
 
-from bot.parser import AuctionTable
+from bot.scraper import AuctionTable
 from db import get_user_by_telegram_id, create_user, User
 
 digit_to_emoji = {
