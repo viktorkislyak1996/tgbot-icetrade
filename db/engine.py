@@ -4,6 +4,7 @@ from sqlalchemy.orm import sessionmaker
 
 
 def create_async_engine(url: URL | str) -> AsyncEngine:
+    # проверка 1
     return create_engine(url=url, pool_pre_ping=True)
 
 
